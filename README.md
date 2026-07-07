@@ -36,7 +36,7 @@ Manage your passwords and api credentials from your terminal powered by Rust and
 Requires Rust 1.75+ (uses the 2024 edition).
 
 ```bash
-git clone https://github.com/your-username/rusty-vault.git
+git clone https://github.com/GeorgeSuarez/RustyVault.git
 cd rusty-vault
 cargo build --release
 ```
