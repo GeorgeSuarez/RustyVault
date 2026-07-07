@@ -176,6 +176,28 @@ keybinds panel on the right. Press `Tab` to switch to the **API Keys** workflow.
 - Argon2 uses default parameters (m=19456 KiB, t=2, p=1). Tuning these for
   production use is recommended.
 
+## Screenshots
+
+### Master password view
+
+![rv-master-pass](screenshot/master-pass-example.png)
+
+### Account list view
+
+![rv-account-list-view](screenshots/account-list-view.png)
+
+### Account details view
+
+![rv-account-details-view](screenshots/account-details-view.png)
+
+### API keys view
+
+![api-keys-view](screenshots/api-keys-view.png)
+
+### Change password view
+
+![change-pass](screenshots/change-pass.png)
+
 ## License
 
 MIT
