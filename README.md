@@ -1,10 +1,6 @@
 # Rusty Vault
 
-Manage your passwords, API credentials, and secrets from the terminal in a TUI.
-
-Rusty Vault is a self-hosted, offline-first secrets manager. All sensitive data
-is encrypted at rest with **AES-256-GCM**, and the encryption key is derived
-from a master password using **Argon2id**. Nothing ever leaves your machine.
+Manage your passwords and api credentials from your terminal powered by Rust and Ratatui.
 
 ## Key features
 
