@@ -1,6 +1,6 @@
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, HorizontalAlignment, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Text,
     widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph},
@@ -13,9 +13,10 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
     let block = Block::default()
         .title(" Rusty Vault ")
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
+        .border_type(BorderType::QuadrantOutside)
+        .border_style(Style::default().bold())
         .style(Style::default().fg(Color::Cyan));
     frame.render_widget(block, area);
 
@@ -24,19 +25,19 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         vertical: 1,
     });
 
-    let show_tabs = matches!(
-        app.mode,
-        Mode::List | Mode::View | Mode::Add | Mode::Edit
-    );
+    let show_tabs = matches!(app.mode, Mode::List | Mode::View | Mode::Add | Mode::Edit);
 
     // In List mode the keybinds live in a side panel next to the list
     // instead of the bottom footer; other modes keep the bottom footer.
     let side_keybinds = app.mode == Mode::List;
 
     let [body, footer] = if show_tabs {
-        let [tabs, body, footer] =
-            Layout::vertical([Constraint::Length(1), Constraint::Min(1), Constraint::Length(2)])
-                .areas(inner);
+        let [tabs, body, footer] = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Min(1),
+            Constraint::Length(2),
+        ])
+        .areas(inner);
         render_tabs(app, frame, tabs);
         [body, footer]
     } else {
@@ -71,7 +72,7 @@ fn render_tabs(app: &mut App, frame: &mut Frame, area: Rect) {
         tab_span(Tab::ApiKeys, active),
     ]);
     frame.render_widget(
-        Paragraph::new(line).alignment(Alignment::Center),
+        Paragraph::new(line).alignment(HorizontalAlignment::Center),
         area,
     );
 }
@@ -87,36 +88,48 @@ fn tab_span(tab: Tab, active: Tab) -> ratatui::text::Span<'static> {
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        ratatui::text::Span::styled(
-            format!("  {label}  "),
-            Style::default().fg(Color::DarkGray),
-        )
+        ratatui::text::Span::styled(format!("  {label}  "), Style::default().fg(Color::DarkGray))
     }
 }
 
 fn render_unlock(app: &mut App, frame: &mut Frame, area: Rect) {
-    let block = Block::default()
-        .title(" Unlock ")
-        .title_alignment(Alignment::Center)
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(Color::Cyan));
+    let block = Block::default();
 
     let inner = block.inner(area);
     frame.render_widget(&block, area);
 
     let chunks = Layout::vertical([
-        Constraint::Length(1),
+        Constraint::Length(15),
+        Constraint::Length(2),
         Constraint::Length(3),
         Constraint::Min(1),
     ])
     .split(inner);
 
+    let banner = chunks[0];
+    let prompt = chunks[1];
+    let field = center_horizontally(chunks[2], 40);
+    let message = chunks[3];
+
+    const TITLE: &'static str = "
+    ▗▄▄▖ ▗▖ ▗▖ ▗▄▄▖▗▄▄▄▖▗▖  ▗▖    ▗▖  ▗▖ ▗▄▖ ▗▖ ▗▖▗▖ ▗▄▄▄▖    
+    ▐▌ ▐▌▐▌ ▐▌▐▌     █   ▝▚▞▘     ▐▌  ▐▌▐▌ ▐▌▐▌ ▐▌▐▌   █      
+    ▐▛▀▚▖▐▌ ▐▌ ▝▀▚▖  █    ▐▌      ▐▌  ▐▌▐▛▀▜▌▐▌ ▐▌▐▌   █      
+    ▐▌ ▐▌▝▚▄▞▘▗▄▄▞▘  █    ▐▌       ▝▚▞▘ ▐▌ ▐▌▝▚▄▞▘▐▙▄▄▖█      
+                ";
+
+    frame.render_widget(
+        Text::raw(TITLE)
+            .alignment(HorizontalAlignment::Center)
+            .style(Style::default().fg(Color::Cyan)),
+        banner,
+    );
+
     frame.render_widget(
         Paragraph::new("Enter your master password:")
-            .alignment(Alignment::Center)
+            .alignment(HorizontalAlignment::Center)
             .style(Style::default().fg(Color::White)),
-        chunks[0],
+        prompt,
     );
 
     render_field(
@@ -124,15 +137,15 @@ fn render_unlock(app: &mut App, frame: &mut Frame, area: Rect) {
         " Master Password ",
         &app.input_master,
         app.field == Field::Master,
-        chunks[1],
+        field,
     );
 
     if !app.message.is_empty() {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
-            chunks[2],
+                .alignment(HorizontalAlignment::Center),
+            message,
         );
     }
 }
@@ -140,7 +153,7 @@ fn render_unlock(app: &mut App, frame: &mut Frame, area: Rect) {
 fn render_setup(app: &mut App, frame: &mut Frame, area: Rect) {
     let block = Block::default()
         .title(" Create Vault ")
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
@@ -158,7 +171,7 @@ fn render_setup(app: &mut App, frame: &mut Frame, area: Rect) {
 
     frame.render_widget(
         Paragraph::new("Choose a master password:")
-            .alignment(Alignment::Center)
+            .alignment(HorizontalAlignment::Center)
             .style(Style::default().fg(Color::White)),
         chunks[0],
     );
@@ -182,7 +195,7 @@ fn render_setup(app: &mut App, frame: &mut Frame, area: Rect) {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
+                .alignment(HorizontalAlignment::Center),
             chunks[3],
         );
     }
@@ -191,7 +204,7 @@ fn render_setup(app: &mut App, frame: &mut Frame, area: Rect) {
 fn render_reset_master(app: &mut App, frame: &mut Frame, area: Rect) {
     let block = Block::default()
         .title(" Change Master Password ")
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
@@ -210,7 +223,7 @@ fn render_reset_master(app: &mut App, frame: &mut Frame, area: Rect) {
 
     frame.render_widget(
         Paragraph::new("Enter your current password, then choose a new one.")
-            .alignment(Alignment::Center)
+            .alignment(HorizontalAlignment::Center)
             .style(Style::default().fg(Color::White)),
         chunks[0],
     );
@@ -241,7 +254,7 @@ fn render_reset_master(app: &mut App, frame: &mut Frame, area: Rect) {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
+                .alignment(HorizontalAlignment::Center),
             chunks[4],
         );
     }
@@ -258,7 +271,7 @@ fn render_account_list(app: &mut App, frame: &mut Frame, area: Rect) {
     if app.accounts.is_empty() {
         frame.render_widget(
             Paragraph::new("No accounts yet. Press `a` to add one.")
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .style(Style::default().fg(Color::DarkGray)),
             area,
         );
@@ -290,7 +303,7 @@ fn render_api_list(app: &mut App, frame: &mut Frame, area: Rect) {
     if app.api_credentials.is_empty() {
         frame.render_widget(
             Paragraph::new("No API credentials yet. Press `a` to add one.")
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .style(Style::default().fg(Color::DarkGray)),
             area,
         );
@@ -329,7 +342,7 @@ fn render_account_view(app: &mut App, frame: &mut Frame, area: Rect) {
     let Some(account) = app.accounts.get(app.selected).cloned() else {
         frame.render_widget(
             Paragraph::new("No account selected.")
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .style(Style::default().fg(Color::DarkGray)),
             area,
         );
@@ -338,7 +351,7 @@ fn render_account_view(app: &mut App, frame: &mut Frame, area: Rect) {
 
     let block = Block::default()
         .title(" Account Details ")
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
@@ -370,7 +383,7 @@ fn render_account_view(app: &mut App, frame: &mut Frame, area: Rect) {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
+                .alignment(HorizontalAlignment::Center),
             chunks[3],
         );
     }
@@ -380,7 +393,7 @@ fn render_api_view(app: &mut App, frame: &mut Frame, area: Rect) {
     let Some(cred) = app.api_credentials.get(app.selected).cloned() else {
         frame.render_widget(
             Paragraph::new("No credential selected.")
-                .alignment(Alignment::Center)
+                .alignment(HorizontalAlignment::Center)
                 .style(Style::default().fg(Color::DarkGray)),
             area,
         );
@@ -389,7 +402,7 @@ fn render_api_view(app: &mut App, frame: &mut Frame, area: Rect) {
 
     let block = Block::default()
         .title(" API Credential Details ")
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
@@ -402,10 +415,7 @@ fn render_api_view(app: &mut App, frame: &mut Frame, area: Rect) {
     } else {
         match &app.revealed {
             Revealed::Api { api_key, .. } => (api_key.clone(), " API Key (revealed) "),
-            _ => (
-                "*".repeat(cred.api_key.len().min(32)),
-                " API Key (hidden) ",
-            ),
+            _ => ("*".repeat(cred.api_key.len().min(32)), " API Key (hidden) "),
         }
     };
     let (secret_display, secret_label) = if cred.client_secret.is_empty() {
@@ -440,7 +450,7 @@ fn render_api_view(app: &mut App, frame: &mut Frame, area: Rect) {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
+                .alignment(HorizontalAlignment::Center),
             chunks[4],
         );
     }
@@ -462,7 +472,7 @@ fn render_account_form(app: &mut App, frame: &mut Frame, area: Rect) {
 
     let block = Block::default()
         .title(title)
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
@@ -478,14 +488,31 @@ fn render_account_form(app: &mut App, frame: &mut Frame, area: Rect) {
     ])
     .split(inner);
 
-    render_field(frame, " Website ", &app.input_website, app.field == Field::Website, chunks[0]);
-    render_field(frame, " Username ", &app.input_username, app.field == Field::Username, chunks[1]);
-    render_field(frame, " Password ", &app.input_password, app.field == Field::Password, chunks[2]);
+    render_field(
+        frame,
+        " Website ",
+        &app.input_website,
+        app.field == Field::Website,
+        chunks[0],
+    );
+    render_field(
+        frame,
+        " Username ",
+        &app.input_username,
+        app.field == Field::Username,
+        chunks[1],
+    );
+    render_field(
+        frame,
+        " Password ",
+        &app.input_password,
+        app.field == Field::Password,
+        chunks[2],
+    );
 
     if !app.message.is_empty() {
         frame.render_widget(
-            Paragraph::new(app.message.as_str())
-                .style(Style::default().fg(Color::Yellow)),
+            Paragraph::new(app.message.as_str()).style(Style::default().fg(Color::Yellow)),
             chunks[3],
         );
     }
@@ -500,7 +527,7 @@ fn render_api_form(app: &mut App, frame: &mut Frame, area: Rect) {
 
     let block = Block::default()
         .title(title)
-        .title_alignment(Alignment::Center)
+        .title_alignment(HorizontalAlignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(Color::Cyan));
@@ -517,9 +544,27 @@ fn render_api_form(app: &mut App, frame: &mut Frame, area: Rect) {
     ])
     .split(inner);
 
-    render_field(frame, " Name (required) ", &app.input_name, app.field == Field::Name, chunks[0]);
-    render_field(frame, " API Key (optional) ", &app.input_api_key, app.field == Field::ApiKey, chunks[1]);
-    render_field(frame, " Client ID (optional) ", &app.input_client_id, app.field == Field::ClientId, chunks[2]);
+    render_field(
+        frame,
+        " Name (required) ",
+        &app.input_name,
+        app.field == Field::Name,
+        chunks[0],
+    );
+    render_field(
+        frame,
+        " API Key (optional) ",
+        &app.input_api_key,
+        app.field == Field::ApiKey,
+        chunks[1],
+    );
+    render_field(
+        frame,
+        " Client ID (optional) ",
+        &app.input_client_id,
+        app.field == Field::ClientId,
+        chunks[2],
+    );
     render_field(
         frame,
         " Client Secret (optional) ",
@@ -530,22 +575,28 @@ fn render_api_form(app: &mut App, frame: &mut Frame, area: Rect) {
 
     if !app.message.is_empty() {
         frame.render_widget(
-            Paragraph::new(app.message.as_str())
-                .style(Style::default().fg(Color::Yellow)),
+            Paragraph::new(app.message.as_str()).style(Style::default().fg(Color::Yellow)),
             chunks[4],
         );
     }
 }
 
-fn render_field(
-    frame: &mut Frame,
-    label: &str,
-    value: &str,
-    focused: bool,
-    area: Rect,
-) {
+fn center_horizontally(area: Rect, width: u16) -> Rect {
+    let width = width.min(area.width);
+    let x = area.x + (area.width - width) / 2;
+    Rect {
+        x,
+        y: area.y,
+        width,
+        height: area.height,
+    }
+}
+
+fn render_field(frame: &mut Frame, label: &str, value: &str, focused: bool, area: Rect) {
     let border_style = if focused {
-        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Color::DarkGray)
     };
@@ -576,16 +627,6 @@ fn render_keybinds_panel(app: &mut App, frame: &mut Frame, area: Rect) {
         Tab::ApiKeys => " Keybinds — API Keys ",
     };
 
-    let block = Block::default()
-        .title(title)
-        .title_alignment(Alignment::Center)
-        .borders(Borders::ALL)
-        .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(Color::DarkGray));
-
-    let inner = block.inner(area);
-    frame.render_widget(&block, area);
-
     let lines: Vec<ratatui::text::Line> = match app.tab {
         Tab::Accounts => vec![
             keybind_line("↑/↓  k/j", "navigate"),
@@ -614,7 +655,28 @@ fn render_keybinds_panel(app: &mut App, frame: &mut Frame, area: Rect) {
         ],
     };
 
-    let help = ratatui::text::Text::from(lines).style(Style::default().fg(Color::DarkGray));
+    // Size the panel to hug its content (line widths + top/bottom borders)
+    // and center it within the allotted area.
+    let content_height = lines.len() as u16 + 2;
+    let content_width = lines.iter().map(|l| l.width() as u16).max().unwrap_or(0) + 2;
+    let panel = Rect {
+        x: area.x + (area.width.saturating_sub(content_width)),
+        y: area.y,
+        width: content_width.min(area.width),
+        height: content_height.min(area.height),
+    };
+
+    let block = Block::default()
+        .title(title)
+        .title_alignment(HorizontalAlignment::Center)
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(Color::Cyan).bold());
+
+    let inner = block.inner(panel);
+    frame.render_widget(&block, panel);
+
+    let help = ratatui::text::Text::from(lines).style(Style::default().fg(Color::Red));
     frame.render_widget(Paragraph::new(help).alignment(Alignment::Left), inner);
 }
 
@@ -624,7 +686,9 @@ fn keybind_line(keys: &str, desc: &str) -> ratatui::text::Line<'static> {
     ratatui::text::Line::from(vec![
         ratatui::text::Span::styled(
             format!("{keys:<10}"),
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         ),
         ratatui::text::Span::raw(desc.to_string()),
     ])
@@ -638,7 +702,7 @@ fn render_status_message(app: &mut App, frame: &mut Frame, area: Rect) {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
+                .alignment(HorizontalAlignment::Center),
             area,
         );
     }
@@ -649,8 +713,12 @@ fn render_footer(app: &mut App, frame: &mut Frame, area: Rect) {
         Mode::Unlock => "[Enter] unlock  [Esc/q] quit",
         Mode::Setup => "[Tab] next field  [Enter] create  [Esc/q] quit",
         Mode::View => match app.tab {
-            Tab::Accounts => "[r] reveal  [c] copy pw  [u] copy user  [e] edit  [d] delete  [↑/↓] nav  [Esc/Enter] back",
-            Tab::ApiKeys => "[r] reveal  [1] copy key  [2] copy id  [3] copy secret  [e] edit  [d] delete  [↑/↓] nav  [Esc/Enter] back",
+            Tab::Accounts => {
+                "[r] reveal  [c] copy pw  [u] copy user  [e] edit  [d] delete  [↑/↓] nav  [Esc/Enter] back"
+            }
+            Tab::ApiKeys => {
+                "[r] reveal  [1] copy key  [2] copy id  [3] copy secret  [e] edit  [d] delete  [↑/↓] nav  [Esc/Enter] back"
+            }
         },
         Mode::Add | Mode::Edit => match app.tab {
             Tab::Accounts => "[Tab] next field  [Backspace] delete  [Enter] save  [Esc] cancel",
@@ -660,8 +728,11 @@ fn render_footer(app: &mut App, frame: &mut Frame, area: Rect) {
         Mode::List => "",
     };
 
-    let text = Text::from(hint).style(Style::default().fg(Color::DarkGray));
-    frame.render_widget(Paragraph::new(text).alignment(Alignment::Center), area);
+    let text = Text::from(hint).style(Style::default().fg(Color::Red));
+    frame.render_widget(
+        Paragraph::new(text).alignment(HorizontalAlignment::Center),
+        area,
+    );
 
     if !app.message.is_empty()
         && matches!(app.mode, Mode::View | Mode::ResetMaster)
@@ -674,7 +745,7 @@ fn render_footer(app: &mut App, frame: &mut Frame, area: Rect) {
         frame.render_widget(
             Paragraph::new(app.message.as_str())
                 .style(Style::default().fg(Color::Yellow))
-                .alignment(Alignment::Center),
+                .alignment(HorizontalAlignment::Center),
             msg_area,
         );
     }
