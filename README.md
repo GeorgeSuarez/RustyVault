@@ -232,9 +232,17 @@ keybinds panel on the right. Press `Tab` to switch to the **API Keys** workflow.
 
 ![rv-account-list-view](screenshots/account-list-view.png)
 
+### Search / filter
+
+![rv-search-filter](screenshots/search-filter.png)
+
 ### Account details view
 
 ![rv-account-details-view](screenshots/account-details-view.png)
+
+### Confirm delete
+
+![rv-confirm-delete](screenshots/confirm-delete.png)
 
 ### API keys view
 

@@ -373,8 +373,16 @@ fn render_account_list(app: &mut App, frame: &mut Frame, area: Rect) {
     let items: Vec<ListItem> = app
         .visible
         .iter()
-        .filter_map(|&index| app.accounts.get(index))
-        .map(|account| {
+        .enumerate()
+        .filter_map(|(position, &index)| app.accounts.get(index).map(|a| (position, a)))
+        .map(|(position, account)| {
+            // Secondary text must stay readable against the selection
+            // background, which is also DarkGray.
+            let secondary = if position == app.selected {
+                Color::Gray
+            } else {
+                Color::DarkGray
+            };
             let site = truncate_chars(&account.website, content_width);
             let used = site.chars().count() + 2;
             let user = truncate_chars(&account.username, content_width.saturating_sub(used));
@@ -382,7 +390,7 @@ fn render_account_list(app: &mut App, frame: &mut Frame, area: Rect) {
             if !user.is_empty() {
                 spans.push(Span::styled(
                     format!("  {user}"),
-                    Style::default().fg(Color::DarkGray),
+                    Style::default().fg(secondary),
                 ));
             }
             ListItem::new(Line::from(spans))
@@ -410,8 +418,16 @@ fn render_api_list(app: &mut App, frame: &mut Frame, area: Rect) {
     let items: Vec<ListItem> = app
         .visible
         .iter()
-        .filter_map(|&index| app.api_credentials.get(index))
-        .map(|cred| {
+        .enumerate()
+        .filter_map(|(position, &index)| app.api_credentials.get(index).map(|c| (position, c)))
+        .map(|(position, cred)| {
+            // Secondary text must stay readable against the selection
+            // background, which is also DarkGray.
+            let secondary = if position == app.selected {
+                Color::Gray
+            } else {
+                Color::DarkGray
+            };
             let name = truncate_chars(&cred.name, content_width);
             let mut badges: Vec<&str> = Vec::new();
             if !cred.api_key.is_empty() {
@@ -429,10 +445,7 @@ fn render_api_list(app: &mut App, frame: &mut Frame, area: Rect) {
                     &format!("  {}", badges.join(" · ")),
                     content_width.saturating_sub(name.chars().count()),
                 );
-                spans.push(Span::styled(
-                    badge_text,
-                    Style::default().fg(Color::DarkGray),
-                ));
+                spans.push(Span::styled(badge_text, Style::default().fg(secondary)));
             }
             ListItem::new(Line::from(spans))
         })
