@@ -2,8 +2,7 @@ use std::{io, panic};
 
 use color_eyre::Result;
 use ratatui::crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
-    execute,
+    cursor, execute,
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
@@ -23,7 +22,10 @@ impl Tui {
 
     pub fn enter(&mut self) -> Result<()> {
         terminal::enable_raw_mode()?;
-        execute!(io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
+        // Mouse capture is intentionally not enabled: the app does not
+        // handle mouse events, and capturing them would break the user's
+        // normal terminal text selection.
+        execute!(io::stderr(), EnterAlternateScreen)?;
 
         let panic_hook = panic::take_hook();
         panic::set_hook(Box::new(move |panic| {
@@ -36,9 +38,12 @@ impl Tui {
         Ok(())
     }
 
+    /// Restore terminal state. Safe to call more than once; also invoked by
+    /// `Drop` so early returns and `?` error paths cannot leave the terminal
+    /// in raw mode or on the alternate screen.
     fn reset() -> Result<()> {
         terminal::disable_raw_mode()?;
-        execute!(io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+        execute!(io::stderr(), LeaveAlternateScreen, cursor::Show)?;
         Ok(())
     }
 
@@ -51,5 +56,12 @@ impl Tui {
     pub fn draw(&mut self, app: &mut App) -> Result<()> {
         self.terminal.draw(|frame| ui::render(app, frame))?;
         Ok(())
+    }
+}
+
+impl Drop for Tui {
+    fn drop(&mut self) {
+        // Best-effort cleanup when `main` returns early via `?`.
+        let _ = Self::reset();
     }
 }

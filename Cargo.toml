@@ -2,6 +2,11 @@
 name = "rusty-vault"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
+description = "Terminal password manager with encrypted local storage"
+license = "MIT"
+repository = "https://github.com/GeorgeSuarez/RustyVault"
+readme = "README.md"
 
 [dependencies]
 aes-gcm = "0.10.3"
